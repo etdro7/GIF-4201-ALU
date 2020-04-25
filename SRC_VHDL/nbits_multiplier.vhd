@@ -40,21 +40,48 @@ entity nbits_multiplier is
         RST : in std_logic;
         EN : in std_logic;
         START : in std_logic;
-        A : in std_logic_vector(N - 1 downto 0);
-        B : in std_logic_vector(N - 1 downto 0);
-        OUTPUT : inout std_logic_vector(N*2 - 1 downto 0);
+        A : in signed(N - 1 downto 0);
+        B : in signed(N - 1 downto 0);
+        OUTPUT : inout signed(N - 1 downto 0);
+        OVERFLOW : out std_logic;
         READY : out std_logic);
 end nbits_multiplier;
 
 architecture Behavioral of nbits_multiplier is
 
+function or_reduct(slv : in std_logic_vector) return std_logic is
+    variable res_v : std_logic;
+  begin
+    res_v := '0';
+    for i in slv'range loop
+      res_v := res_v or slv(i);
+    end loop;
+    return res_v;
+  end function;
+
+function and_reduct(slv : in std_logic_vector) return std_logic is
+    variable res_v : std_logic;
+  begin
+    res_v := '0';
+    for i in slv'range loop
+      res_v := res_v and slv(i);
+    end loop;
+    return res_v;
+  end function;
+
 type mult_state_type is (idle, comparaison, addition, decallage, fin);
 signal mult_state : mult_state_type := idle;
 signal operation_counter : unsigned(N - 1 downto 0);
-signal a_buffer : signed(N - 1 downto 0);
-signal b_buffer : signed(N - 1 downto 0);
+signal a_buffer : signed(N*2 - 1 downto 0);
+signal b_buffer : signed(N*2 - 1 downto 0);
+signal output_buffer : signed(N*2 -1 downto 0);
+signal contains_1 : std_logic;
+signal contains_0 : std_logic;
 
 begin
+
+contains_1 <= or_reduct(std_logic_vector(output_buffer(N*2-1 downto N-1)));
+contains_0 <= not(and_reduct(std_logic_vector(output_buffer(N*2-1 downto N-1))));
 
 process(CLK, RST, EN)
 begin
@@ -65,11 +92,22 @@ begin
         case mult_state is
             when idle =>
                 READY <= '0';
+                OVERFLOW <= '0';
                 operation_counter <= (others => '0');
                 if START = '1' then
-                    a_buffer <= signed(A);
-                    b_buffer <= signed(B);
-                    OUTPUT <= (others => '0');
+                    a_buffer(N-1 downto 0) <= signed(A);
+                    if(A(A'length-1)='1') then
+                        a_buffer(a_buffer'length-1 downto N) <= (others => '1');
+                    else
+                        a_buffer(a_buffer'length-1 downto N) <= (others => '0');
+                    end if;
+                    b_buffer(N-1 downto 0) <= signed(B);
+                    if(B(B'length-1)='1') then
+                        b_buffer(b_buffer'length-1 downto N) <= (others => '1');
+                    else
+                        b_buffer(b_buffer'length-1 downto N) <= (others => '0');
+                    end if;
+                    output_buffer <= (others => '0');
                     mult_state <= comparaison;
                 end if;
             when comparaison =>
@@ -79,12 +117,26 @@ begin
                     mult_state <= decallage;
                 end if;
             when addition =>
-                OUTPUT <= std_logic_vector(signed(OUTPUT) + shift_left(a_buffer,to_integer(operation_counter)));
+                output_buffer <= output_buffer + shift_left(a_buffer,to_integer(operation_counter));
                 mult_state <= decallage;
             when decallage =>
                 b_buffer <= shift_right(b_buffer,1);
                 operation_counter <= operation_counter + 1;
                 if operation_counter >= N then
+                    if(output_buffer(output_buffer'length-1) = '1') then
+                        if(contains_0 = '1') then
+                            OVERFLOW <= '1';
+                        else
+                            OVERFLOW <= '0';
+                        end if;
+                    else
+                        if(contains_1 = '1') then
+                            OVERFLOW <= '1';
+                        else
+                            OVERFLOW <= '0';
+                        end if;
+                    end if;
+                    OUTPUT <= output_buffer(N - 1 downto 0);
                     mult_state <= fin;
                 else
                     mult_state <= comparaison;

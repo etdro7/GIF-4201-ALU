@@ -17,6 +17,8 @@ entity nbits_ALU is
            B : in STD_LOGIC_VECTOR (N - 1 downto 0);
            C : in STD_LOGIC_VECTOR (N - 1 downto 0);
            OPT : in STD_LOGIC_VECTOR (4 downto 0);
+           START : in STD_LOGIC;
+           READY : in STD_LOGIC;
            OUTPUT : out STD_LOGIC_VECTOR (N - 1 downto 0);
            OVERFLOW : out STD_LOGIC;
            DIVIDE_BY_ZERO : out STD_LOGIC;
@@ -43,8 +45,10 @@ signal EQZ_1 : STD_LOGIC;
 signal adder_overflow : STD_LOGIC;
 signal substractor_overflow : STD_LOGIC;
 -- others
-signal adder_carry : STD_LOGIC;
-signal substractor_carry : STD_LOGIC;
+--signal adder_carry : STD_LOGIC;
+--signal substractor_carry : STD_LOGIC;
+signal b_neg : signed(N - 1 downto 0);
+
 
 component nbits_adder
 port (  CLK : in STD_LOGIC;
@@ -112,18 +116,20 @@ begin
         EN => EN,
         A => A,
         B => B,
-        C => adder_carry,
+        C => '0',
         OUTPUT => adder_output,
         OVERFLOW => adder_overflow      
     );
+    
+    b_neg <= signed(unsigned(not(B))+1);
     adder_inst_2: nbits_adder
     port map (
         CLK => CLK,
         RST => RST,
         EN => EN,
         A => A,
-        B => B,
-        C => substractor_carry,
+        B => std_logic_vector(b_neg),
+        C => '0',
         OUTPUT => substractor_output,
         OVERFLOW => substractor_overflow     
     );
@@ -139,17 +145,19 @@ begin
         GT => GT_1,
         EQZ => EQZ_1
     );
-    --multiplier_inst_1: nbits_multiplier
-    --port map (
-    --    CLK => CLK,
-    --    RST => RST,
-    --    EN => EN,
-    --    START => START,
-    --    A => A,
-    --    B => B,
-    --    OUTPUT => multiplier_output,
-    --    READY => READY
-    --);
+    
+    multiplier_inst_1: nbits_multiplier
+    port map (
+        CLK => CLK,
+        RST => RST,
+        EN => EN,
+        START => START,
+        A => A,
+        B => B,
+        OUTPUT => multiplier_output,
+        READY => READY
+    );
+    
     nbits_shift_right_inst_1: nbits_shift_right
     port map (
         CLK => CLK,
