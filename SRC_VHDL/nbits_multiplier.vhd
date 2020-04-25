@@ -51,8 +51,8 @@ architecture Behavioral of nbits_multiplier is
 type mult_state_type is (idle, comparaison, addition, decallage, fin);
 signal mult_state : mult_state_type := idle;
 signal operation_counter : unsigned(N - 1 downto 0);
-signal a_buffer : unsigned(N - 1 downto 0);
-signal b_buffer : unsigned(N - 1 downto 0);
+signal a_buffer : signed(N - 1 downto 0);
+signal b_buffer : signed(N - 1 downto 0);
 
 begin
 
@@ -67,8 +67,8 @@ begin
                 READY <= '0';
                 operation_counter <= (others => '0');
                 if START = '1' then
-                    a_buffer <= unsigned(A);
-                    b_buffer <= unsigned(B);
+                    a_buffer <= signed(A);
+                    b_buffer <= signed(B);
                     OUTPUT <= (others => '0');
                     mult_state <= comparaison;
                 end if;
@@ -79,7 +79,7 @@ begin
                     mult_state <= decallage;
                 end if;
             when addition =>
-                OUTPUT <= std_logic_vector(unsigned(OUTPUT) + shift_left(a_buffer,to_integer(operation_counter)));
+                OUTPUT <= std_logic_vector(signed(OUTPUT) + shift_left(a_buffer,to_integer(operation_counter)));
                 mult_state <= decallage;
             when decallage =>
                 b_buffer <= shift_right(b_buffer,1);
@@ -95,7 +95,5 @@ begin
         end case;
     end if;
 end process;
-
-
 
 end Behavioral;
