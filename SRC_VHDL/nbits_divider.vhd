@@ -43,20 +43,24 @@ entity nbits_divider is
     A : in signed(N - 1 downto 0);
     B : in signed(N - 1 downto 0);
     OUTPUT : inout signed(N - 1 downto 0);
+    ERROR : out std_logic;
     READY : out std_logic);
 end nbits_divider;
 
 architecture Behavioral of nbits_divider is
 
-type divid_state_type is (idle, comparaison, soustraction, decallage, fin);
+type divid_state_type is (idle, comparaison, soustraction, decallage, fin,erreur);
 signal divid_state : divid_state_type := idle;
 signal operation_counter : unsigned(N - 1 downto 0);
 signal a_buffer : unsigned(N*2 - 2 downto 0);
 signal b_buffer : unsigned(N*2 - 2 downto 0);
 signal b_buffer_no_touch : unsigned(N - 1 downto 0);
 signal a_neg,b_neg : std_logic := '0';
+signal zero : signed(N - 1 downto 0);
 
 begin
+
+zero <= (others => '0');
 
 process(CLK, RST, EN)
 begin
@@ -67,6 +71,7 @@ begin
         case divid_state is
             when idle =>
                 READY <= '0';
+                ERROR <= '0';
                 operation_counter <= (others => '0');
                 if START = '1' then
                     a_buffer(a_buffer'length - 1 downto N) <= (others => '0');
@@ -89,7 +94,11 @@ begin
                         b_neg <= '0';
                     end if;
                     OUTPUT <= (others => '0');
-                    divid_state <= comparaison;
+                    if B = zero then
+                        divid_state <= erreur;
+                    else
+                        divid_state <= comparaison;
+                    end if;
                 end if;
             when comparaison =>
                 if b_buffer_no_touch <= a_buffer(a_buffer'length - 1 downto N - 1) then
@@ -116,6 +125,12 @@ begin
                 
             when fin =>
                 READY <= '1';
+                divid_state <= idle;
+            when erreur =>
+                READY <= '1';
+                ERROR <= '1';
+                divid_state <= idle;
+            when others =>
                 divid_state <= idle;
         end case;
     end if;
