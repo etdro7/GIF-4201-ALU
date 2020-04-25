@@ -15,10 +15,10 @@ entity nbits_ALU is
            EN : in STD_LOGIC;
            A : in STD_LOGIC_VECTOR (N - 1 downto 0);
            B : in STD_LOGIC_VECTOR (N - 1 downto 0);
-           C : in STD_LOGIC_VECTOR (N - 1 downto 0);
+           C : unsigned (N - 1 downto 0);
            OPT : in STD_LOGIC_VECTOR (4 downto 0);
            START : in STD_LOGIC;
-           READY : in STD_LOGIC;
+           READY : out STD_LOGIC;
            OUTPUT : out STD_LOGIC_VECTOR (N - 1 downto 0);
            OVERFLOW : out STD_LOGIC;
            DIVIDE_BY_ZERO : out STD_LOGIC;
@@ -30,10 +30,10 @@ architecture Behavioral of nbits_ALU is
 
 -- output signals
 signal adder_output : STD_LOGIC_VECTOR(N - 1 downto 0);
-signal multiplier_output : STD_LOGIC_VECTOR(N - 1 downto 0);
+signal multiplier_output : signed(N - 1 downto 0);
 signal substractor_output : STD_LOGIC_VECTOR(N - 1 downto 0);
-signal divider_output : STD_LOGIC_VECTOR(N - 1 downto 0);
-signal modulo_output : STD_LOGIC_VECTOR(N - 1 downto 0);
+signal divider_output : signed(N - 1 downto 0);
+signal modulo_output : signed(N - 1 downto 0);
 signal shift_left_output : STD_LOGIC_VECTOR(N - 1 downto 0);
 signal shift_right_output : STD_LOGIC_VECTOR(N - 1 downto 0);
 -- comparators output signals --
@@ -44,11 +44,17 @@ signal EQZ_1 : STD_LOGIC;
 -- overflow signals
 signal adder_overflow : STD_LOGIC;
 signal substractor_overflow : STD_LOGIC;
+signal multiplier_overflow : STD_LOGIC;
 -- others
 --signal adder_carry : STD_LOGIC;
 --signal substractor_carry : STD_LOGIC;
+signal divide_by_zero_1 : STD_LOGIC;
+signal divide_by_zero_2 : STD_LOGIC;
 signal b_neg : signed(N - 1 downto 0);
-
+-- ready signals 
+signal ready_multiplier : STD_LOGIC;
+signal ready_divider : STD_LOGIC;
+signal ready_modulo : STD_LOGIC;
 
 component nbits_adder
 port (  CLK : in STD_LOGIC;
@@ -63,15 +69,14 @@ port (  CLK : in STD_LOGIC;
 end component;
 
 component nbits_multiplier
-Port (  CLK : in std_logic;
+Port ( CLK : in std_logic;
         RST : in std_logic;
         EN : in std_logic;
-        --- Comment intégrer le start? ---
         START : in std_logic;
-        A : in std_logic_vector(N - 1 downto 0);
-        B : in std_logic_vector(N - 1 downto 0);
-        OUTPUT : inout std_logic_vector(N*2 - 1 downto 0);
-        --- idem ---
+        A : in signed(N - 1 downto 0);
+        B : in signed(N - 1 downto 0);
+        OUTPUT : inout signed(N - 1 downto 0);
+        OVERFLOW : out std_logic;
         READY : out std_logic);
 end component;
 
@@ -108,6 +113,32 @@ port (
     OUTPUT : out STD_LOGIC_VECTOR (N - 1 downto 0));
 end component;
 
+component nbits_divider
+Port ( 
+    CLK : in std_logic;
+    RST : in std_logic;
+    EN : in std_logic;
+    START : in std_logic;
+    A : in signed(N - 1 downto 0);
+    B : in signed(N - 1 downto 0);
+    OUTPUT : inout signed(N - 1 downto 0);
+    ERROR : out std_logic;
+    READY : out std_logic);
+end component;
+
+component nbits_modulo
+    Port ( 
+    CLK : in std_logic;
+    RST : in std_logic;
+    EN : in std_logic;
+    START : in std_logic;
+    A : in signed(N - 1 downto 0);
+    B : in signed(N - 1 downto 0);
+    OUTPUT : inout signed(N - 1 downto 0);
+    ERROR : out std_logic;
+    READY : out std_logic);
+end component;
+    
 begin
     adder_inst_1: nbits_adder
     port map (
@@ -152,10 +183,11 @@ begin
         RST => RST,
         EN => EN,
         START => START,
-        A => A,
-        B => B,
+        A => signed(A),
+        B => signed(B),
         OUTPUT => multiplier_output,
-        READY => READY
+        OVERFLOW => multiplier_overflow,
+        READY => ready_multiplier
     );
     
     nbits_shift_right_inst_1: nbits_shift_right
@@ -176,13 +208,40 @@ begin
         B => B,
         OUTPUT => shift_left_output
     );
+    nbits_divider_inst_1: nbits_divider
+    port map (
+        CLK => CLK,
+        RST => RST,
+        EN => EN,
+        START => START,
+        A => signed(A),
+        B => signed(B),
+        OUTPUT => divider_output,
+        ERROR => divide_by_zero_1,
+        READY => ready_divider
+    );
+    nbits_modulo_inst_1: nbits_modulo
+    port map (
+        CLK => CLK,
+        RST => RST,
+        EN => EN,
+        START => START,
+        A => signed(A),
+        B => signed(B),
+        OUTPUT => modulo_output,
+        ERROR => divide_by_zero_2,
+        READY => ready_modulo
+    );
+    
     alu_process : process (CLK, RST, EN)
     begin
         if RST = '1' then
-            --OUTPUT <= "0000000000000000";
-            --OVERFLOW <= '0';
-            --DIVIDE_BY_ZERO <= '0';
-            --BRANCH <= '0';
+            OUTPUT <= (others => '0');
+            OVERFLOW <= '0';
+            DIVIDE_BY_ZERO <= '0';
+            BRANCH <= '0';
+           
+            
         elsif (clk'event and clk = '1' and en = '1') then
             case OPT is
                 when "00000" =>
@@ -192,11 +251,17 @@ begin
                     OUTPUT <= substractor_output;
                     OVERFLOW <= substractor_overflow;
                 when "00010" =>
-                    -- multiplier output
+                    OUTPUT <= std_logic_vector(multiplier_output);
+                    OVERFLOW <= multiplier_overflow;
+                    READY <= ready_multiplier;
                 when "00011" =>
-                    -- divider output
+                    OUTPUT <= std_logic_vector(divider_output);
+                    DIVIDE_BY_ZERO <= divide_by_zero_1;
+                    READY <= ready_divider;
                 when "00100" =>
-                    -- modulo output
+                    OUTPUT <= std_logic_vector(modulo_output);
+                    DIVIDE_BY_ZERO <= divide_by_zero_2;
+                    READY <= ready_modulo;
                 when "00101" =>
                     OUTPUT <= A and B;
                 when "00110" =>
@@ -211,7 +276,7 @@ begin
                     OUTPUT <= shift_right_output;
                 when "01011"  =>
                     if EQ_1 = '1' then
-                        OUTPUT <= C;
+                        OUTPUT <= std_logic_vector(C);
                         BRANCH <= '1';
                     else
                         OUTPUT <= (others => '0');
@@ -219,7 +284,7 @@ begin
                     end if;    
                 when "01100" =>
                     if EQ_1 = '0' then
-                        OUTPUT <= C;
+                        OUTPUT <= std_logic_vector(C);
                         BRANCH <= '1';
                      else
                         OUTPUT <= (others => '0');
@@ -227,7 +292,7 @@ begin
                     end if;    
                 when "01101" =>
                     if LT_1 = '1' then
-                        OUTPUT <= C;
+                        OUTPUT <= std_logic_vector(C);
                         BRANCH <= '1';
                      else
                         OUTPUT <= (others => '0');
@@ -235,7 +300,7 @@ begin
                     end if;    
                 when "01110" =>
                     if (LT_1 or EQ_1) = '1' then
-                        OUTPUT <= C;
+                        OUTPUT <= std_logic_vector(C);
                         BRANCH <= '1';
                      else
                         OUTPUT <= (others => '0');
@@ -243,7 +308,7 @@ begin
                     end if;
                 when "01111" =>
                     if EQZ_1 = '1' then
-                        OUTPUT <= C;
+                        OUTPUT <= std_logic_vector(C);
                         BRANCH <= '1';
                      else
                         OUTPUT <= (others => '0');
@@ -251,12 +316,14 @@ begin
                     end if;
                 when "10000" =>
                     if EQZ_1 = '0' then
-                        OUTPUT <= C;
+                        OUTPUT <= std_logic_vector(C);
                         BRANCH <= '1';
                      else
                         OUTPUT <= (others => '0');
                         BRANCH <= '0';
-                    end if;                                
+                    end if;
+                when others =>
+                    null;                            
             end case;
         end if;
     
