@@ -93,7 +93,7 @@ begin
     if RST = '1' then 
         a_buffer <= (others => '0');
         b_buffer <= (others => '0');
-    elsif CLK'event and CLK = '1' then
+    elsif CLK'event and CLK = '1' and en = '1' then
         if START = '1' then
             a_buffer <= A;
             b_buffer <= B;

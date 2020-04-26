@@ -88,7 +88,7 @@ begin
     if RST = '1' then 
         READY <= '0';
         mult_state <= idle;
-    elsif CLK'event and CLK = '1' then
+    elsif CLK'event and CLK = '1' and en = '1' then
         case mult_state is
             when idle =>
                 READY <= '0';

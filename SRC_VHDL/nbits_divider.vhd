@@ -67,7 +67,7 @@ begin
     if RST = '1' then 
         READY <= '0';
         divid_state <= idle;
-    elsif CLK'event and CLK = '1' then
+    elsif CLK'event and CLK = '1' and en = '1' then
         case divid_state is
             when idle =>
                 READY <= '0';
