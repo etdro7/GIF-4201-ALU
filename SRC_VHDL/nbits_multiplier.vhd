@@ -80,8 +80,8 @@ signal contains_0 : std_logic;
 
 begin
 
-contains_1 <= or_reduct(std_logic_vector(output_buffer(N*2-1 downto N-1)));
-contains_0 <= not(and_reduct(std_logic_vector(output_buffer(N*2-1 downto N-1))));
+contains_1 <= or_reduct(std_logic_vector(output_buffer(N*2-1 downto N)));
+contains_0 <= not(output_buffer(31) and output_buffer(30) and output_buffer(29) and output_buffer(28) and output_buffer(27) and output_buffer(26) and output_buffer(25) and output_buffer(24) and output_buffer(23) and output_buffer(22) and output_buffer(21) and output_buffer(20) and output_buffer(19) and output_buffer(18) and output_buffer(17) and output_buffer(16));
 
 process(CLK, RST, EN)
 begin

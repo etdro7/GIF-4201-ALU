@@ -79,13 +79,310 @@ stim_proc: process
     begin
     rst <= '1';
     en <= '1';
-    start <= '1';
-    OPT <= "00100";
-    C <= "0100000000000000";
-    A <= "0000000000101011";
-    B <= "0000000000000011";
+    start <= '0';
+    OPT <= "00000";
+    C <= x"0000";--0
+    A <= x"0005";--5
+    B <= x"0210";--528
     wait for 100 ns;
     rst <= '0';
+    wait for clk_period;
+    C <= x"0000";--0
+    A <= x"0005";--5
+    B <= x"0210";--528
+    wait for clk_period*3;
+    if(OUTPUT = x"0215" and OVERFLOW = '0') then--533
+        report "Correct addition 528 + 5 = 533" severity note;
+    else
+        report "Erreur 528 + 5 = 533" severity failure;
+    end if;
+    
+    wait for clk_period*3;
+    C <= x"0000";--0
+    A <= x"7530";--30 000
+    B <= x"7530";--30 000
+    wait for clk_period*3;
+    if(OVERFLOW = '1') then--533
+        report "Correct addition 30 000 + 30 000 = overflow" severity note;
+    else
+        report "Erreur 30 000 + 30 000 = overflow" severity failure;
+    end if;
+    
+    wait for clk_period*3;
+    C <= x"0000";--0
+    A <= x"FFC4";-- -60
+    B <= x"0005";--5
+    wait for clk_period*3;
+    if(OUTPUT = x"FFC9" and OVERFLOW = '0') then--533
+        report "Correct addition -60 + 5 = -55" severity note;
+    else
+        report "Erreur -60 + 5 = -55" severity failure;
+    end if;
+    
+    wait for clk_period*3;
+    C <= x"0000";--0
+    A <= x"0005";--5
+    B <= x"FFC4";-- -60
+    wait for clk_period*3;
+    if(OUTPUT = x"FFC9" and OVERFLOW = '0') then--533
+        report "Correct addition 5 - 60 = -55" severity note;
+    else
+        report "Erreur 5 - 60 = -55" severity failure;
+    end if;
+    
+    wait for clk_period*3;
+    C <= x"0000";--0
+    A <= x"8AD0";-- -30 000
+    B <= x"8AD0";-- -30 000
+    wait for clk_period*3;
+    if(OVERFLOW = '1') then--533
+        report "Correct addition -30 000 - 30 000 = overflow" severity note;
+    else
+        report "Erreur -30 000 - 30 000 = overflow" severity failure;
+    end if;
+    
+    
+    --Soustraction
+    OPT <= "00001";
+    wait for clk_period*3;
+    C <= x"0000";--0
+    A <= x"0005";--5
+    B <= x"0210";--528
+    wait for clk_period*3;
+    if(OUTPUT = x"FDF5" and OVERFLOW = '0') then--533
+        report "Correct soustraction 5 - 528 = -523" severity note;
+    else
+        report "Erreur 528 - 5 = 523" severity failure;
+    end if;
+    
+    wait for clk_period*3;
+    C <= x"0000";--0
+    A <= x"8AD0";-- -30 000
+    B <= x"7530";-- 30 000
+    wait for clk_period*3;
+    if(OVERFLOW = '1') then--533
+        report "Correct soustraction -30 000 - 30 000 = overflow" severity note;
+    else
+        report "Erreur -30 000 - 30 000 = overflow" severity failure;
+    end if;
+    
+    wait for clk_period*3;
+    C <= x"0000";--0
+    A <= x"FFC4";-- -60
+    B <= x"0005";-- 5
+    wait for clk_period*3;
+    if(OUTPUT = x"FFBF" and OVERFLOW = '0') then--533
+        report "Correct soustraction -60 - 5 = -65" severity note;
+    else
+        report "Erreur -60 - 5 = -65" severity failure;
+    end if;
+    
+    wait for clk_period*3;
+    C <= x"0000";--0
+    A <= x"0005";--5
+    B <= x"FFC4";-- -60
+    wait for clk_period*3;
+    if(OUTPUT = x"0041" and OVERFLOW = '0') then--533
+        report "Correct soustraction 5 -- 60 = 65" severity note;
+    else
+        report "Erreur 5 -- 60 = 65" severity failure;
+    end if;
+    
+    wait for clk_period*3;
+    C <= x"0000";--0
+    A <= x"7530";-- 30 000
+    B <= x"8AD0";-- -30 000
+    wait for clk_period*3;
+    if(OVERFLOW = '1') then--533
+        report "Correct soustraction 30 000 -- 30 000 = overflow" severity note;
+    else
+        report "Erreur 30 000 -- 30 000 = overflow" severity failure;
+    end if;
+    wait for clk_period*3;
+    
+    
+    --Multiplication
+    OPT <= "00010";
+    wait for clk_period*3;
+    C <= x"0000";--0
+    A <= x"0005";--5
+    B <= x"0005";--5
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    if(OUTPUT = x"0019" and OVERFLOW = '0') then--533
+        report "Correct multiplication 5 * 5 = 25" severity note;
+    else
+        report "Erreur multiplication 5 * 5 = 25" severity failure;
+    end if;
+    wait for clk_period;
+    
+    wait for clk_period;
+    C <= x"0000";--0
+    A <= x"FFF6";-- -10
+    B <= x"0005";-- 5
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OUTPUT = x"FFCE" and OVERFLOW = '0') then
+        report "Correct multiplication -10 * 5 = -50" severity note;
+    else
+        report "Erreur multiplication 10 * 5 = -50" severity failure;
+    end if;
+    
+    wait for clk_period;
+    C <= x"0000";--0
+    A <= x"FFF6";-- -10
+    B <= x"0005";-- 5
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OUTPUT = x"FFCE" and OVERFLOW = '0') then
+        report "Correct multiplication -10 * 5 = -50" severity note;
+    else
+        report "Erreur multiplication 10 * 5 = -50" severity failure;
+    end if;
+    
+    wait for clk_period;
+    C <= x"0000";--0
+    A <= x"7530";-- 30 000
+    B <= x"7530";-- 30 000
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OVERFLOW = '1') then
+        report "Correct multiplication 30 000 * 30 000 = Overflow" severity note;
+    else
+        report "Erreur multiplication 30 000 * 30 000 = Overflow" severity failure;
+    end if;
+    
+    
+    wait for clk_period;
+    C <= x"0000";--0
+    A <= x"8AD0";-- 30 000
+    B <= x"7530";-- 30 000
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OVERFLOW = '1') then
+        report "Correct multiplication -30 000 * 30 000 = Overflow" severity note;
+    else
+        report "Erreur multiplication -30 000 * 30 000 = Overflow" severity failure;
+    end if;
+    
+    wait for clk_period;
+    C <= x"0000";--0
+    A <= x"8AD0";-- 30 000
+    B <= x"8AD0";-- 30 000
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OVERFLOW = '1') then
+        report "Correct multiplication -30 000 * -30 000 = Overflow" severity note;
+    else
+        report "Erreur multiplication -30 000 * -30 000 = Overflow" severity failure;
+    end if;
+        
+    
+    --Division 
+    OPT <= "00011";
+    wait for clk_period;
+    C <= x"0000";--0
+    A <= x"8AD0";-- 30 000
+    B <= x"8AD0";-- 30 000
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OUTPUT = x"0001" and DIVIDE_BY_ZERO = '0') then
+        report "Correct division 30 000/30 000 = 1" severity note;
+    else
+        report "Erreur division 30 000/30 000 = 1" severity failure;
+    end if;
+    
+    wait for clk_period;
+    C <= x"0000";--0
+    A <= x"001E";-- 30
+    B <= x"0005";-- 5
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OUTPUT = x"0006" and DIVIDE_BY_ZERO = '0') then
+        report "Correct division 30/5 = 6" severity note;
+    else
+        report "Erreur division 30/5 = 6" severity failure;
+    end if;
+    
+    wait for clk_period;
+    C <= x"0000";--0
+    A <= x"0020";-- 32
+    B <= x"0005";-- 5
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OUTPUT = x"0006" and DIVIDE_BY_ZERO = '0') then
+        report "Correct division 32/5 = 6" severity note;
+    else
+        report "Erreur division 32/5 = 6" severity failure;
+    end if;
+    
+    wait for clk_period;
+    C <= x"0000";--0
+    A <= x"FFE0";-- -32
+    B <= x"0005";-- 5
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OUTPUT = x"FFFA" and DIVIDE_BY_ZERO = '0') then
+        report "Correct division 32/5 = 6" severity note;
+    else
+        report "Erreur division 32/5 = 6" severity failure;
+    end if;
+    
+    wait for clk_period;
+    C <= x"0000";--0
+    A <= x"FFE0";-- -32
+    B <= x"0000";-- 5
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(DIVIDE_BY_ZERO = '1') then
+        report "Correct division -32/0 = DIVIDE BY ZERO" severity note;
+    else
+        report "Erreur division -32/0 = DIVIDE BY ZERO" severity failure;
+    end if;
+        
     if OPT = "00010" or OPT = "00011" or OPT = "00100" then
         while READY = '0' loop
             wait for clk_period;

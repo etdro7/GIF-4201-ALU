@@ -66,6 +66,10 @@ signal inter_a : std_logic_vector(N - 1 downto 0) := (others => '0');
 signal inter_b : std_logic_vector(N - 1 downto 0) := (others => '0');
 signal inter_carry : std_logic_vector(N downto 0) := (others => '0');
 signal inter_out : std_logic_vector(N - 1 downto 0) := (others => '0');
+signal debug1 : std_logic;
+signal debug2 : std_logic;
+signal debug3 : std_logic;
+signal debug4 : std_logic;
 
 begin
 
@@ -101,13 +105,23 @@ output_s : register_nbits
             D => inter_out,
             Q => OUTPUT);
             
-output_overflow : register_nbits
-    generic map ( N => 1)
-    port map ( CLK => CLK,
-        RST => RST,
-        EN => EN,
-        D => inter_carry(N downto N),
-        Q(0) => Overflow);            
+--output_overflow : register_nbits
+--    generic map ( N => 1)
+--    port map ( CLK => CLK,
+--        RST => RST,
+--        EN => EN,
+--        D => inter_carry(N downto N),
+--        Q(0) => Overflow);            
+        
+OVERFLOW <= '1' when (inter_a(N-1)='0' and inter_b(N-1)='0' and inter_out(N-1)='1') else
+            '0' when ((inter_a(N-1)='1' and inter_b(N-1)='0') or (inter_a(N-1)='0' and inter_b(N-1)='1')) else
+            '1' when (inter_a(N-1)='1' and inter_b(N-1)='1' and inter_out(N-1)='0') else
+            '0';
+debug1 <= '1' when (inter_a(N-1)='0' and inter_b(N-1)='0' and inter_out(N-1)='1') else
+          '0';
+debug2 <= '1' when inter_a(N-1)='0' else '0';
+debug3 <= '1' when inter_b(N-1)='0' else '0';
+debug4 <= '1' when inter_out(N-1)='1' else '0';
 
 Gen_phase : for I in 0 to N - 1 generate
       
