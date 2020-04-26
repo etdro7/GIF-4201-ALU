@@ -383,13 +383,166 @@ stim_proc: process
         report "Erreur division -32/0 = DIVIDE BY ZERO" severity failure;
     end if;
         
+   
+    
+    --modulo       
+    OPT <= "00100";
+     wait for clk_period;
+    C <= x"0000";
+    A <= x"0009";
+    B <= x"0003";
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OUTPUT = x"0000" and DIVIDE_BY_ZERO = '0') then
+        report "Correct modulo 9%3 = 0" severity note;
+    else
+        report "Erreur modulo 9%3 = 0" severity failure;
+    end if;  
+    
+    wait for clk_period;
+    C <= x"0000";
+    A <= x"0009";
+    B <= x"0004";
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OUTPUT = x"0001" and DIVIDE_BY_ZERO = '0') then
+        report "Correct modulo 9%4 = 1" severity note;
+    else
+        report "Erreur modulo 9%4 = 1" severity failure;
+    end if;  
+    
+    wait for clk_period;
+    C <= x"0000";
+    A <= x"0020";
+    B <= x"0000";
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(DIVIDE_BY_ZERO = '1') then
+        report "Correct modulo -32/0 = DIVIDE BY ZERO" severity note;
+    else
+        report "Erreur modulo -32/0 = DIVIDE BY ZERO" severity failure;
+    end if;
+    
+    -- shift right
+    OPT <= "01010";
+    wait for clk_period;
+    C <= x"0001";
+    A <= "0000100100100000";
+    B <= x"0002";
+    wait for clk_period;
+    if(OUTPUT = "0000001001001000") then
+        report "Correct shift right" severity note;
+    else
+        report "Erreur shift right" severity failure;
+    end if;
+    
+    -- shift left
+    OPT <= "01001";
+    wait for clk_period;
+    C <= x"0001";
+    A <= "0000100100100000";
+    B <= x"0002";
+    wait for clk_period;
+    if(OUTPUT = "0010010010000000") then
+        report "Correct shift left" severity note;
+    else
+        report "Erreur shift left" severity failure;
+    end if;
+    
+    -- equal
+    OPT <= "01011";
+    wait for clk_period;
+    C <= x"0001";
+    A <= x"0002";
+    B <= x"0002";
+    wait for clk_period;
+    if(OUTPUT = x"0001" and BRANCH = '1') then
+        report "Correct equal actually equal" severity note;
+    else
+        report "Erreur equal actually equal" severity failure;
+    end if;
+    
+    wait for clk_period;
+    C <= x"0001";
+    A <= x"0002";
+    B <= x"0003";
+    wait for clk_period;
+    if(OUTPUT = x"0000" and BRANCH = '0') then
+        report "Correct equal not actually equal" severity note;
+    else
+        report "Erreur equal not actually equal" severity failure;
+    end if;
+    
     if OPT = "00010" or OPT = "00011" or OPT = "00100" then
         while READY = '0' loop
             wait for clk_period;
         end loop;
-    end if;        
+    end if;
     
-        
+    -- not equal
+    OPT <= "01100";
+    wait for clk_period;
+    C <= x"0001";
+    A <= x"0002";
+    B <= x"0003";
+    wait for clk_period;
+    if(OUTPUT = x"0001" and BRANCH = '1') then
+        report "Correct not equal" severity note;
+    else
+        report "Erreur not equal" severity failure;
+    end if;
+    
+    -- Less than
+    OPT <= "01101";
+    wait for clk_period;
+    C <= x"0001";
+    A <= x"0002";
+    B <= x"0003";
+    wait for clk_period;
+    if(OUTPUT = x"0001" and BRANCH = '1') then
+        report "Correct less than" severity note;
+    else
+        report "Erreur less than" severity failure;
+    end if;
+    
+    -- Less than or equal
+    OPT <= "01110";
+    wait for clk_period;
+    C <= x"0001";
+    A <= x"0002";
+    B <= x"0003";
+    wait for clk_period;
+    if(OUTPUT = x"0001" and BRANCH = '1') then
+        report "Correct less than or equal" severity note;
+    else
+        report "Erreur less than or equal" severity failure;
+    end if;
+    
+    -- equal zero
+    OPT <= "01111";
+    wait for clk_period;
+    C <= x"0001";
+    A <= x"0000";
+    B <= x"0003";
+    wait for clk_period;
+    if(OUTPUT = x"0001" and BRANCH = '1') then
+        report "Correct equal zero" severity note;
+    else
+        report "Erreur equal zero" severity failure;
+    end if;
+    
     wait;
     end process;
 
