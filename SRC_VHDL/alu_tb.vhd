@@ -369,6 +369,22 @@ stim_proc: process
     
     wait for clk_period;
     C <= x"0000";--0
+    A <= x"0009";-- -32
+    B <= x"0003";-- 5
+    wait for clk_period;
+    START <= '1';
+    wait for clk_period;
+    START <= '0';
+    wait until READY = '1';
+    wait for clk_period;
+    if(OUTPUT = x"0003" and DIVIDE_BY_ZERO = '0') then
+        report "Correct division 9/3 = 3" severity note;
+    else
+        report "Erreur division 9/3 = 3" severity failure;
+    end if;
+    
+    wait for clk_period;
+    C <= x"0000";--0
     A <= x"FFE0";-- -32
     B <= x"0000";-- 5
     wait for clk_period;
@@ -387,6 +403,9 @@ stim_proc: process
     
     --modulo       
     OPT <= "00100";
+    RST <= '1';
+    wait for clk_period;
+    RST <= '0';
      wait for clk_period;
     C <= x"0000";
     A <= x"0009";
@@ -403,6 +422,9 @@ stim_proc: process
         report "Erreur modulo 9%3 = 0" severity failure;
     end if;  
     
+    RST <= '1';
+    wait for clk_period;
+    RST <= '0';
     wait for clk_period;
     C <= x"0000";
     A <= x"0009";
@@ -419,6 +441,9 @@ stim_proc: process
         report "Erreur modulo 9%4 = 1" severity failure;
     end if;  
     
+    RST <= '1';
+    wait for clk_period;
+    RST <= '0';
     wait for clk_period;
     C <= x"0000";
     A <= x"0020";
@@ -437,11 +462,11 @@ stim_proc: process
     
     -- shift right
     OPT <= "01010";
-    wait for clk_period;
+    wait for clk_period*3;
     C <= x"0001";
     A <= "0000100100100000";
     B <= x"0002";
-    wait for clk_period;
+    wait for clk_period*3;
     if(OUTPUT = "0000001001001000") then
         report "Correct shift right" severity note;
     else
@@ -463,22 +488,25 @@ stim_proc: process
     
     -- equal
     OPT <= "01011";
-    wait for clk_period;
+    wait for clk_period*3;
     C <= x"0001";
     A <= x"0002";
     B <= x"0002";
-    wait for clk_period;
+    wait for clk_period*3;
     if(OUTPUT = x"0001" and BRANCH = '1') then
         report "Correct equal actually equal" severity note;
     else
         report "Erreur equal actually equal" severity failure;
     end if;
     
+    RST <= '1';
+    wait for clk_period;
+    RST <= '0';
     wait for clk_period;
     C <= x"0001";
     A <= x"0002";
     B <= x"0003";
-    wait for clk_period;
+    wait for clk_period*5;
     if(OUTPUT = x"0000" and BRANCH = '0') then
         report "Correct equal not actually equal" severity note;
     else
@@ -493,11 +521,11 @@ stim_proc: process
     
     -- not equal
     OPT <= "01100";
-    wait for clk_period;
+    wait for clk_period*3;
     C <= x"0001";
     A <= x"0002";
     B <= x"0003";
-    wait for clk_period;
+    wait for clk_period*5;
     if(OUTPUT = x"0001" and BRANCH = '1') then
         report "Correct not equal" severity note;
     else
@@ -506,7 +534,7 @@ stim_proc: process
     
     -- Less than
     OPT <= "01101";
-    wait for clk_period;
+    wait for clk_period*3;
     C <= x"0001";
     A <= x"0002";
     B <= x"0003";
@@ -519,7 +547,7 @@ stim_proc: process
     
     -- Less than or equal
     OPT <= "01110";
-    wait for clk_period;
+    wait for clk_period*3;
     C <= x"0001";
     A <= x"0002";
     B <= x"0003";
@@ -532,11 +560,11 @@ stim_proc: process
     
     -- equal zero
     OPT <= "01111";
-    wait for clk_period;
+    wait for clk_period*3;
     C <= x"0001";
     A <= x"0000";
     B <= x"0003";
-    wait for clk_period;
+    wait for clk_period*3;
     if(OUTPUT = x"0001" and BRANCH = '1') then
         report "Correct equal zero" severity note;
     else

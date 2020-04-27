@@ -221,7 +221,7 @@ architecture Behavioral of nbits_comparator is
 
 signal unsigned_bits_a : unsigned(N-2 downto 0);
 signal unsigned_bits_b : unsigned(N-2 downto 0);
-signal zero_test : STD_LOGIC_VECTOR(N-1 downto 0);
+signal zero_test : STD_LOGIC_VECTOR(N-1 downto 0) := (others => '0');
     
 begin
     comparator_process : process(CLK,RST,EN) 
@@ -233,23 +233,22 @@ begin
         EQZ <= '0';
         
     elsif (clk'event and clk = '1' and en = '1') then
-    unsigned_bits_a <= unsigned(A(N-2 downto 0));
-    unsigned_bits_b <= unsigned(B(N-2 downto 0));
-        if A(N-1) = '0' and B(N-1) = '1' then
+        if A > B then
             GT <= '1';
-            
-        elsif A(N-1) = '1' and B(N-1) = '0' then
+            EQ <= '0';
+            LT <= '0';
+        elsif A = B then
+            EQ <= '1';
+            GT <= '0';
+            LT <= '0';
+        elsif A < B then
             LT <= '1';
-            
-        elsif A(N-1) = B(N-1) then
-            if unsigned_bits_a > unsigned_bits_b then
-                GT <= '1';
-            elsif unsigned_bits_a = unsigned_bits_b then
-                EQ <= '1';
-            elsif unsigned_bits_a < unsigned_bits_b then
-                LT <= '1';
-            end if;
-                                    
+            EQ <= '0';
+            GT <= '0';
+        else
+            LT <= '0';
+            EQ <= '0';
+            GT <= '0';
         end if;
         if A = zero_test then
             EQZ <= '1';
